@@ -1,0 +1,1271 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#04060a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ACore Coach">
+<title>ACore Coach — Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/dexie@3.2.4/dist/dexie.js"></script>
+<script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+/* ── AQUACORE.AI — ACore Coach v2.0 ── */
+:root {
+  --bg-void:    #04060a;
+  --bg-base:    #080c14;
+  --bg-surface: #0f1524;
+  --bg-raised:  #161f33;
+  --bg-overlay: #1d2942;
+
+  --ink-primary:   #f1f5f9;
+  --ink-secondary: #94a3b8;
+  --ink-muted:     #475569;
+
+  --app-color:        #c8ff00;
+  --app-color-dim:    #9acc00;
+  --app-color-glow:   rgba(200,255,0,0.15);
+  --app-color-border: rgba(200,255,0,0.25);
+
+  --success:  #34d399;
+  --warn:     #fbbf24;
+  --danger:   #ef4444;
+  --info:     #38bdf8;
+
+  --z-a2: #34d399;
+  --z-b1: #fbbf24;
+  --z-b2: #f97316;
+  --z-c1: #ef4444;
+  --z-c2: #c084fc;
+
+  --font-ui:   'Syne', system-ui, sans-serif;
+  --font-data: 'DM Mono', monospace;
+
+  --border-color: #1e293b;
+  --border:       1px solid var(--border-color);
+  --radius: 12px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg-void);
+  color: var(--ink-primary);
+  font-family: var(--font-ui);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+input, select, textarea {
+  font-family: inherit;
+  color: inherit;
+  background: var(--bg-raised);
+  border: var(--border);
+  padding: 9px 13px;
+  border-radius: 8px;
+  width: 100%;
+  font-size: 0.875rem;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--app-color-dim);
+  box-shadow: 0 0 0 3px var(--app-color-glow);
+}
+button { cursor: pointer; font-family: inherit; border: none; background: none; transition: all 0.15s ease; }
+
+/* ── LAYOUT ── */
+.app-container { max-width: 1680px; margin: 0 auto; padding: 0 20px 40px; }
+
+/* ── HEADER ── */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: var(--border);
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+  gap: 14px;
+  position: sticky;
+  top: 0;
+  background: rgba(4,6,10,0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 200;
+}
+
+.logo {
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.logo-mark { width: 36px; height: 36px; flex-shrink: 0; }
+.logo-text {
+  font-family: var(--font-ui);
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--ink-primary);
+  line-height: 1;
+}
+.logo-text span { color: var(--app-color); }
+.logo-sub {
+  font-family: var(--font-data);
+  font-size: 0.52rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+  display: block;
+  margin-top: 3px;
+}
+
+.header-actions { display: flex; gap: 10px; align-items: center; }
+
+/* ── TOGGLE GROUP ── */
+.toggle-group {
+  display: flex;
+  background: var(--bg-base);
+  border: var(--border);
+  padding: 3px;
+  border-radius: 8px;
+  gap: 3px;
+}
+.toggle-btn {
+  flex: 1;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-family: var(--font-data);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--ink-secondary);
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.toggle-btn.active {
+  background: var(--app-color);
+  color: var(--bg-void);
+  font-weight: 700;
+}
+
+/* ── BUTTONS ── */
+.btn {
+  padding: 9px 16px;
+  border-radius: 8px;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 0.82rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  letter-spacing: 0.02em;
+  transition: all 0.15s;
+}
+.btn-acid {
+  background: var(--app-color);
+  color: var(--bg-void);
+}
+.btn-acid:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 4px 16px var(--app-color-glow);
+}
+.btn-secondary {
+  background: var(--bg-raised);
+  border: var(--border);
+  color: var(--ink-primary);
+}
+.btn-secondary:hover { background: var(--bg-overlay); }
+.btn-danger {
+  background: rgba(239,68,68,0.08);
+  border: 1px solid rgba(239,68,68,0.2);
+  color: var(--danger);
+}
+.btn-danger:hover { background: rgba(239,68,68,0.18); }
+.btn-full { width: 100%; }
+.btn-sm { padding: 6px 10px; font-size: 0.72rem; }
+
+.btn-icon {
+  background: var(--bg-raised);
+  border: var(--border);
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-secondary);
+  font-size: 0.9rem;
+}
+.btn-icon:hover {
+  border-color: var(--app-color-dim);
+  color: var(--app-color);
+}
+
+/* ── GRID ── */
+.grid-layout { display: grid; grid-template-columns: 1fr; gap: 28px; }
+@media(min-width: 1024px) { .grid-layout { grid-template-columns: 400px 1fr; } }
+
+/* ── CARDS ── */
+.card {
+  background: var(--bg-surface);
+  border: var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow);
+}
+.card-header {
+  padding: 11px 16px;
+  background: var(--bg-raised);
+  border-bottom: var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.card-title {
+  font-family: var(--font-data);
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: var(--ink-muted);
+  letter-spacing: 0.1em;
+}
+.card-body { padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+
+/* ── FORM LABEL ── */
+.form-label {
+  font-family: var(--font-data);
+  font-size: 0.65rem;
+  color: var(--ink-muted);
+  font-weight: 500;
+  display: block;
+  margin-bottom: 5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ── BADGE ── */
+.badge {
+  font-family: var(--font-data);
+  font-weight: 700;
+  font-size: 0.62rem;
+  padding: 3px 8px;
+  border-radius: 5px;
+  background: var(--bg-overlay);
+  letter-spacing: 0.04em;
+}
+.badge-lane   { color: var(--warn); border: 1px solid rgba(251,191,36,0.25); }
+.badge-stress { color: var(--app-color); border: 1px solid var(--app-color-border); }
+
+/* ── TIME INPUTS ── */
+.time-row { display: flex; align-items: center; gap: 6px; }
+.time-box {
+  text-align: center;
+  font-family: var(--font-data);
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--app-color);
+  flex: 1;
+}
+.time-sep { color: var(--ink-muted); font-size: 1.1rem; font-weight: 700; flex-shrink: 0; }
+
+/* ── ROSTER ── */
+.roster-scroll { max-height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+.roster-scroll::-webkit-scrollbar { width: 4px; }
+.roster-scroll::-webkit-scrollbar-track { background: var(--bg-void); }
+.roster-scroll::-webkit-scrollbar-thumb { background: var(--bg-overlay); border-radius: 2px; }
+
+.athlete-row {
+  background: var(--bg-raised);
+  border: var(--border);
+  padding: 10px 14px;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.athlete-row:hover {
+  border-color: var(--app-color-border);
+  background: var(--bg-overlay);
+}
+.athlete-name { font-weight: 600; font-size: 0.88rem; }
+.athlete-pbs  { font-size: 0.65rem; color: var(--ink-secondary); font-family: var(--font-data); margin-top: 2px; }
+
+/* ── PAYWALL BANNER ── */
+.paywall-banner {
+  background: var(--bg-raised);
+  border: 1px solid var(--app-color-border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.paywall-text { font-size: 0.78rem; color: var(--ink-secondary); line-height: 1.4; }
+.paywall-text strong {
+  color: var(--app-color);
+  display: block;
+  font-family: var(--font-data);
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 3px;
+}
+
+/* ── WORKOUT TEXTAREA ── */
+.workout-textarea {
+  min-height: 110px;
+  font-family: var(--font-data);
+  font-size: 0.85rem;
+  resize: vertical;
+  line-height: 1.7;
+  letter-spacing: 0.02em;
+}
+
+/* ── STRESS METER ── */
+.stress-meter {
+  background: var(--bg-raised);
+  border: var(--border);
+  border-radius: 10px;
+  padding: 12px 16px;
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.stress-stat { display: flex; flex-direction: column; gap: 2px; }
+.stress-stat-label {
+  font-family: var(--font-data);
+  font-size: 0.58rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ink-muted);
+}
+.stress-stat-value {
+  font-family: var(--font-data);
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--app-color);
+}
+.stress-bar-wrap { flex: 1; min-width: 120px; }
+.stress-bar { height: 6px; background: var(--bg-void); border-radius: 3px; overflow: hidden; margin-top: 4px; }
+.stress-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--z-a2), var(--z-b1), var(--z-b2), var(--z-c1), var(--z-c2));
+}
+
+/* ── BLOCK TITLE ── */
+.block-title {
+  font-family: var(--font-data);
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: var(--app-color);
+  letter-spacing: -0.02em;
+}
+
+/* ── ZONE GRID ── */
+.zone-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1px;
+  background: var(--border-color);
+  border-radius: 0 0 var(--radius) var(--radius);
+  overflow: hidden;
+}
+.zone-card {
+  background: var(--bg-surface);
+  padding: 14px;
+  transition: background 0.15s;
+}
+.zone-card:hover { background: var(--bg-raised); }
+
+.zone-athlete-name {
+  font-weight: 700;
+  font-size: 0.88rem;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.zone-row-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 7px 8px;
+  border-radius: 6px;
+  font-family: var(--font-data);
+  font-size: 0.82rem;
+  margin-bottom: 2px;
+  transition: background 0.1s;
+}
+.zone-row-item:hover { background: var(--bg-raised); }
+.zone-left  { display: flex; align-items: center; gap: 8px; }
+.zone-dot   { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.zone-key   { font-weight: 700; font-size: 0.8rem; }
+.zone-right { text-align: right; }
+.zone-pace  { font-weight: 700; font-size: 0.9rem; }
+.zone-int   { font-size: 0.65rem; color: var(--ink-secondary); margin-top: 1px; }
+
+/* ── EMPTY STATE ── */
+.empty-state {
+  border: 2px dashed var(--border-color);
+  border-radius: var(--radius);
+  padding: 60px 30px;
+  text-align: center;
+  color: var(--ink-muted);
+}
+.empty-icon  { font-size: 2.5rem; margin-bottom: 12px; opacity: 0.6; }
+.empty-title { font-size: 1rem; font-weight: 600; color: var(--ink-secondary); margin-bottom: 6px; }
+.empty-sub   { font-size: 0.82rem; }
+
+/* ── MODAL ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(4,6,10,0.88);
+  backdrop-filter: blur(6px);
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.modal-box {
+  background: var(--bg-surface);
+  border: var(--border);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 480px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+  animation: modalIn 0.2s ease;
+}
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.97) translateY(8px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+.modal-header {
+  padding: 14px 16px;
+  background: var(--bg-raised);
+  border-bottom: var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.modal-title {
+  font-family: var(--font-data);
+  font-weight: 700;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--app-color);
+}
+.modal-body {
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.modal-close {
+  color: var(--ink-secondary);
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 6px;
+}
+.modal-close:hover { background: var(--bg-overlay); color: var(--ink-primary); }
+
+/* ── LEGEND ── */
+.legend-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  background: var(--bg-raised);
+  border-radius: 8px;
+  border-left: 4px solid;
+}
+.legend-name   { font-weight: 700; font-size: 0.88rem; }
+.legend-desc   { font-size: 0.78rem; color: var(--ink-secondary); }
+.legend-stress { font-family: var(--font-data); font-size: 0.65rem; color: var(--ink-muted); margin-top: 2px; }
+
+/* ── DELTA HINT ── */
+.delta-hint {
+  background: var(--bg-void);
+  border-left: 3px solid var(--app-color-border);
+  border-radius: 0 6px 6px 0;
+  padding: 8px 12px;
+  font-size: 0.72rem;
+  color: var(--ink-muted);
+  line-height: 1.5;
+}
+
+/* ── BOTTOM NAV MOBILE ── */
+.bottom-nav { display: none; }
+
+@media (max-width: 767px) {
+  body { padding-bottom: 68px; }
+  .header { padding: 10px 0; margin-bottom: 16px; }
+  .app-container { padding: 0 14px; }
+
+  .bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    z-index: 100;
+    background: rgba(8,12,20,0.96);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-top: var(--border);
+    padding: 8px 0 max(10px, env(safe-area-inset-bottom));
+  }
+  .bottom-nav button {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    color: var(--ink-muted);
+    font-family: var(--font-data);
+    font-size: 0.5rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 4px 0;
+    transition: color 0.15s;
+    background: none;
+    border: none;
+  }
+  .bottom-nav button.active { color: var(--app-color); }
+  .bottom-nav button .nav-icon { font-size: 1.1rem; line-height: 1; }
+}
+
+/* ── PRINT / EXPORT ── */
+@media print {
+  .header, .no-print, .card-header button, .bottom-nav,
+  .stress-meter, .delta-hint { display: none !important; }
+
+  body {
+    background: #fff !important;
+    color: #000 !important;
+    font-family: 'Syne', system-ui, sans-serif !important;
+    padding: 0 !important;
+  }
+
+  /* Print header brandizzato */
+  .print-header {
+    display: flex !important;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 0 12px;
+    border-bottom: 2px solid #c8ff00;
+    margin-bottom: 20px;
+  }
+  .print-logo-mark { width: 32px; height: 32px; }
+  .print-brand-name {
+    font-family: 'Syne', system-ui, sans-serif;
+    font-size: 1rem;
+    font-weight: 800;
+    color: #000;
+  }
+  .print-brand-name span { color: #9acc00; }
+  .print-app-name {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.55rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #666;
+    display: block;
+    margin-top: 2px;
+  }
+  .print-date {
+    margin-left: auto;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: #666;
+  }
+  .print-footer {
+    display: block !important;
+    text-align: center;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    color: #999;
+    margin-top: 32px;
+    padding-top: 8px;
+    border-top: 1px solid #eee;
+  }
+
+  .grid-layout { grid-template-columns: 1fr !important; }
+  .card { border: none !important; background: transparent !important; box-shadow: none !important; }
+  .zone-grid { grid-template-columns: 1fr 1fr !important; background: #ddd !important; gap: 6px; border-radius: 6px; overflow: hidden; }
+  .zone-card { border: none !important; color: #000 !important; background: #f8f8f8 !important; page-break-inside: avoid; }
+  .zone-row-item { color: #000 !important; }
+  .zone-athlete-name { border-bottom: 1px solid #ddd !important; color: #000 !important; }
+  .zone-key { color: #000 !important; }
+  .zone-pace { color: #000 !important; font-weight: 700 !important; }
+  .zone-int { color: #555 !important; }
+  .block-title { color: #9acc00 !important; }
+  .badge { background: #eee !important; color: #333 !important; border: 1px solid #ccc !important; }
+  .card-header { background: #f0f0f0 !important; border-bottom: 1px solid #ddd !important; }
+}
+
+/* Elementi print nascosti in schermo */
+.print-header,
+.print-footer { display: none; }
+
+[x-cloak] { display: none !important; }
+</style>
+</head>
+<body x-data="aquaCoreApp()" x-init="initDB()">
+
+<div class="app-container">
+
+  <!-- PRINT HEADER (visibile solo in stampa/export) -->
+  <div class="print-header">
+    <svg class="print-logo-mark" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M5 25H75L95 50L75 75H5L25 50L5 25Z" fill="#9acc00"/>
+      <path d="M25 37H70L80 50L70 63H25L35 50L25 37Z" fill="#fff"/>
+      <path d="M45 45H65L69 50L65 55H45L49 50L45 45Z" fill="#9acc00"/>
+    </svg>
+    <div>
+      <div class="print-brand-name">AQUA<span>CORE</span>.AI</div>
+      <span class="print-app-name">ACore Coach — Training Sheet</span>
+    </div>
+    <div class="print-date" id="printDate"></div>
+  </div>
+
+  <!-- HEADER -->
+  <header class="header">
+    <a href="#" class="logo">
+      <svg class="logo-mark" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M5 25H75L95 50L75 75H5L25 50L5 25Z" fill="var(--app-color)"/>
+        <path d="M25 37H70L80 50L70 63H25L35 50L25 37Z" fill="#04060a"/>
+        <path d="M45 45H65L69 50L65 55H45L49 50L45 45Z" fill="var(--app-color)"/>
+      </svg>
+      <div>
+        <div class="logo-text">AQUA<span>CORE</span>.AI</div>
+        <div class="logo-sub">ACore Coach</div>
+      </div>
+    </a>
+
+    <div class="header-actions no-print">
+      <div class="toggle-group">
+        <button class="toggle-btn" :class="state.poolLen === '25m' ? 'active' : ''" @click="setPool('25m')">25m</button>
+        <button class="toggle-btn" :class="state.poolLen === '50m' ? 'active' : ''" @click="setPool('50m')">50m</button>
+        <button class="toggle-btn" :class="state.poolLen === '25yd' ? 'active' : ''" @click="setPool('25yd')">25yd</button>
+      </div>
+      <div class="toggle-group">
+        <button class="toggle-btn" :class="state.lang === 'IT' ? 'active' : ''" @click="state.lang = 'IT'">IT</button>
+        <button class="toggle-btn" :class="state.lang === 'EN' ? 'active' : ''" @click="state.lang = 'EN'">EN</button>
+      </div>
+      <button @click="ui.legendOpen = true" class="btn-icon" :title="state.lang === 'IT' ? 'Legenda zone' : 'Zone legend'">?</button>
+    </div>
+  </header>
+
+  <div class="grid-layout">
+
+    <!-- COLONNA SINISTRA -->
+    <div class="no-print" style="display:flex; flex-direction:column; gap:20px;">
+
+      <!-- ROSTER -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title" x-text="state.lang === 'IT' ? 'Roster Squadra' : 'Team Roster'"></span>
+          <span class="badge badge-stress" x-text="athletes.length + (state.lang === 'IT' ? ' atleti' : ' athletes')"></span>
+        </div>
+        <div class="card-body">
+
+          <!-- PAYWALL: max 3 atleti free -->
+          <template x-if="athletes.length >= 3 && !state.isPro">
+            <div class="paywall-banner">
+              <div class="paywall-text">
+                <strong>🔒 <span x-text="state.lang === 'IT' ? 'Piano Free — Limite raggiunto' : 'Free Plan — Limit reached'"></span></strong>
+                <span x-text="state.lang === 'IT' ? 'Passa a Pro per gestire più di 3 atleti, storico illimitato e export PDF.' : 'Upgrade to Pro for unlimited athletes, full history and PDF export.'"></span>
+              </div>
+              <button class="btn btn-acid btn-sm" style="flex-shrink:0;" x-text="state.lang === 'IT' ? 'Pro 9€/m' : 'Go Pro 9€/m'"></button>
+            </div>
+          </template>
+
+          <!-- FORM AGGIUNTA ATLETA -->
+          <template x-if="athletes.length < 3 || state.isPro">
+            <form @submit.prevent="addAthlete()">
+              <div style="display:flex; gap:8px; margin-bottom:10px;">
+                <div style="flex:2;">
+                  <label class="form-label" x-text="state.lang === 'IT' ? 'Cognome Nome' : 'Athlete Name'"></label>
+                  <input type="text" x-model="forms.athlete.name" :placeholder="state.lang === 'IT' ? 'Es. ROSSI Mario' : 'E.g. SMITH John'" required>
+                </div>
+                <div style="flex:1;">
+                  <label class="form-label" x-text="state.lang === 'IT' ? 'Corsia' : 'Lane'"></label>
+                  <select x-model="forms.athlete.lane" required>
+                    <option value="">—</option>
+                    <template x-for="i in 8">
+                      <option :value="i" x-text="'C. ' + i"></option>
+                    </template>
+                  </select>
+                </div>
+              </div>
+
+              <div style="display:flex; gap:8px; align-items:flex-end; margin-bottom:12px;">
+                <div style="flex-shrink:0;">
+                  <label class="form-label">Stile</label>
+                  <select x-model="forms.athlete.style" style="width:72px;">
+                    <option value="SL">SL</option>
+                    <option value="DO">DO</option>
+                    <option value="RA">RA</option>
+                    <option value="FA">FA</option>
+                    <option value="MI">MI</option>
+                  </select>
+                </div>
+                <div style="flex:1;">
+                  <label class="form-label">PB (min : sec . cs)</label>
+                  <div class="time-row">
+                    <input type="number" inputmode="numeric" x-model="forms.athlete.min" placeholder="m" min="0" class="time-box">
+                    <span class="time-sep">:</span>
+                    <input type="number" inputmode="numeric" x-model="forms.athlete.sec" placeholder="ss" min="0" max="59" class="time-box">
+                    <span class="time-sep">.</span>
+                    <input type="number" inputmode="numeric" x-model="forms.athlete.cs" placeholder="cs" min="0" max="99" class="time-box">
+                  </div>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-acid btn-full" style="font-size:0.78rem; letter-spacing:0.04em;">
+                + <span x-text="state.lang === 'IT' ? 'INSERISCI / AGGIORNA ATLETA' : 'INSERT / UPDATE ATHLETE'"></span>
+              </button>
+            </form>
+          </template>
+
+          <!-- LISTA ATLETI -->
+          <div class="roster-scroll">
+            <template x-if="athletes.length === 0">
+              <div style="text-align:center; color:var(--ink-muted); font-size:0.8rem; padding:20px;" x-text="state.lang === 'IT' ? 'Nessun atleta nel roster.' : 'No athletes in roster.'"></div>
+            </template>
+            <template x-for="ath in athletes" :key="ath.id">
+              <div class="athlete-row" @click="openEditModal(ath)">
+                <div>
+                  <div class="athlete-name" x-text="ath.name"></div>
+                  <div class="athlete-pbs">
+                    <template x-for="(history, style) in ath.pbs">
+                      <span style="margin-right:10px;" x-text="style + ' ' + formatCs(history[history.length - 1].cs)"></span>
+                    </template>
+                  </div>
+                </div>
+                <span class="badge badge-lane" x-text="'C.' + ath.lane"></span>
+              </div>
+            </template>
+          </div>
+        </div>
+      </div>
+
+      <!-- WORKOUT INPUT -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title" x-text="state.lang === 'IT' ? 'Serie Allenamento' : 'Workout Input'"></span>
+        </div>
+        <div class="card-body">
+          <div>
+            <label class="form-label" x-text="state.lang === 'IT' ? 'Inserisci le serie' : 'Enter your sets'"></label>
+            <textarea
+              x-model="state.workoutRaw"
+              class="workout-textarea"
+              :placeholder="state.lang === 'IT' ? 'Separa con invio, virgola o +\nEs:\n8x50SL\n4x100DO + 2x200MI' : 'Separate with enter, comma or +\nE.g.:\n8x50SL\n4x100DO + 2x200MI'"
+            ></textarea>
+          </div>
+
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="flex:1;">
+              <label class="form-label">Δ <span x-text="state.lang === 'IT' ? 'Muro (sec)' : 'Wall time (sec)'"></span></label>
+              <input type="number" x-model.number="state.deltaSec" step="0.5" min="0" style="font-family:var(--font-data); text-align:center;">
+            </div>
+          </div>
+          <div class="delta-hint" x-text="state.lang === 'IT' ? '⚡ Δ Muro: secondi aggiunti al PB per simulare il recupero tra le vasche. 1.5 sec = allenamento normale. 0 = ritmo gara puro.' : '⚡ Δ Wall: seconds added to PB to simulate rest between walls. 1.5s = normal training. 0 = pure race pace.'"></div>
+
+          <button @click="calculatePaces()" class="btn btn-acid btn-full" style="font-size:0.82rem; letter-spacing:0.04em;">
+            ⚡ <span x-text="state.lang === 'IT' ? 'CALCOLA PASSI ALLENAMENTO' : 'CALCULATE TRAINING PACES'"></span>
+          </button>
+        </div>
+      </div>
+
+      <!-- WIPE -->
+      <button @click="wipeGlobalState()" class="btn btn-danger btn-sm" style="align-self:flex-start;">
+        <span x-text="state.lang === 'IT' ? '⚠ Wipe Database Locale' : '⚠ Wipe Local Database'"></span>
+      </button>
+
+    </div><!-- /colonna sinistra -->
+
+    <!-- COLONNA DESTRA -->
+    <div>
+
+      <template x-if="computedBlocks.length === 0">
+        <div class="empty-state">
+          <div class="empty-icon">🏊</div>
+          <div class="empty-title" x-text="state.lang === 'IT' ? 'Roster pronto.' : 'Roster ready.'"></div>
+          <div class="empty-sub" x-text="state.lang === 'IT' ? 'Inserisci le serie a sinistra e clicca su Calcola.' : 'Enter your sets on the left and hit Calculate.'"></div>
+        </div>
+      </template>
+
+      <template x-if="computedBlocks.length > 0">
+        <div>
+
+          <!-- STRESS METER -->
+          <div class="stress-meter no-print">
+            <div class="stress-stat">
+              <span class="stress-stat-label" x-text="state.lang === 'IT' ? 'Volume totale' : 'Total volume'"></span>
+              <span class="stress-stat-value" x-text="sessionMetrics.volume + 'm'"></span>
+            </div>
+            <div class="stress-stat">
+              <span class="stress-stat-label">Hydro-Load</span>
+              <span class="stress-stat-value" x-text="sessionMetrics.stressPoints + ' pts'"></span>
+            </div>
+            <div class="stress-bar-wrap">
+              <div style="font-family:var(--font-data); font-size:0.58rem; color:var(--ink-muted); text-transform:uppercase; letter-spacing:0.08em;" x-text="state.lang === 'IT' ? 'Intensità sessione' : 'Session intensity'"></div>
+              <div class="stress-bar">
+                <div class="stress-fill" :style="'width:' + Math.min(100, sessionMetrics.stressPoints / 3) + '%'"></div>
+              </div>
+            </div>
+            <button @click="window.print()" class="btn btn-secondary btn-sm">📄 <span x-text="state.lang === 'IT' ? 'Stampa / PDF' : 'Print / PDF'"></span></button>
+          </div>
+
+          <!-- BLOCCHI -->
+          <template x-for="block in computedBlocks" :key="block.reps + block.dist + block.style">
+            <div class="card" style="margin-bottom:24px;">
+              <div class="card-header" style="background:var(--bg-overlay); padding:14px 18px;">
+                <span class="block-title" x-text="block.reps + ' × ' + block.dist + 'm ' + block.style"></span>
+                <span class="badge badge-stress" x-text="'Hydro-Load: ' + block.blockStress + ' pts'"></span>
+              </div>
+
+              <div class="zone-grid">
+                <template x-for="ath in block.results" :key="ath.name">
+                  <div class="zone-card">
+                    <div class="zone-athlete-name">
+                      <span x-text="ath.name"></span>
+                      <span class="badge badge-lane" x-text="'C.' + ath.lane"></span>
+                    </div>
+                    <template x-for="z in ath.zones" :key="z.key">
+                      <div class="zone-row-item">
+                        <div class="zone-left">
+                          <div class="zone-dot" :style="'background:' + z.color"></div>
+                          <div class="zone-key" :style="'color:' + z.color" x-text="z.key"></div>
+                        </div>
+                        <div class="zone-right">
+                          <div class="zone-pace" :style="'color:' + z.color" x-text="z.pace"></div>
+                          <div class="zone-int" x-text="'@ ' + z.int"></div>
+                        </div>
+                      </div>
+                    </template>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </template>
+
+        </div>
+      </template>
+
+    </div><!-- /colonna destra -->
+
+  </div><!-- /grid -->
+
+  <!-- PRINT FOOTER -->
+  <div class="print-footer" id="printFooter">
+    aquacore.ai — ACore Coach · <span id="printFooterDate"></span>
+  </div>
+
+</div><!-- /app-container -->
+
+<!-- BOTTOM NAV MOBILE -->
+<nav class="bottom-nav no-print">
+  <button class="active" @click="ui.mobileTab = 'input'">
+    <span class="nav-icon">✏️</span>
+    <span x-text="state.lang === 'IT' ? 'Input' : 'Input'"></span>
+  </button>
+  <button @click="ui.mobileTab = 'results'">
+    <span class="nav-icon">📊</span>
+    <span x-text="state.lang === 'IT' ? 'Passi' : 'Paces'"></span>
+  </button>
+  <button @click="ui.legendOpen = true">
+    <span class="nav-icon">📋</span>
+    <span x-text="state.lang === 'IT' ? 'Zone' : 'Zones'"></span>
+  </button>
+  <button @click="window.print()">
+    <span class="nav-icon">📄</span>
+    <span>PDF</span>
+  </button>
+</nav>
+
+<!-- MODAL: EDIT ATLETA -->
+<div class="modal-overlay" x-show="ui.modalOpen" x-cloak style="display:none;" @click.self="ui.modalOpen = false">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title" x-text="forms.edit.name"></span>
+      <button class="modal-close" @click="ui.modalOpen = false">✕</button>
+    </div>
+    <div class="modal-body">
+      <div>
+        <label class="form-label" x-text="state.lang === 'IT' ? 'Cambia corsia' : 'Change lane'"></label>
+        <select x-model="forms.edit.lane">
+          <template x-for="i in 8">
+            <option :value="i" x-text="(state.lang === 'IT' ? 'Corsia ' : 'Lane ') + i"></option>
+          </template>
+        </select>
+      </div>
+      <div style="display:flex; justify-content:space-between; gap:10px; margin-top:4px;">
+        <button @click="deleteAthlete()" class="btn btn-danger" style="flex:1;" x-text="state.lang === 'IT' ? 'Elimina atleta' : 'Delete athlete'"></button>
+        <button @click="saveAthleteGlobal()" class="btn btn-acid" style="flex:1;" x-text="state.lang === 'IT' ? 'Salva modifiche' : 'Save changes'"></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: LEGENDA ZONE -->
+<div class="modal-overlay" x-show="ui.legendOpen" x-cloak style="display:none;" @click.self="ui.legendOpen = false">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title" x-text="state.lang === 'IT' ? 'Legenda Zone & Hydro-Load' : 'Zone Legend & Hydro-Load'"></span>
+      <button class="modal-close" @click="ui.legendOpen = false">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:0.82rem; color:var(--ink-secondary);" x-text="state.lang === 'IT' ? 'ACore Coach suddivide i passi in base ai coefficienti dei sistemi energetici. Il Hydro-Load misura il carico fisiologico della sessione.' : 'ACore Coach maps paces to energy system coefficients. Hydro-Load measures the session physiological stress.'"></p>
+
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <div class="legend-item" style="border-left-color:var(--z-a2)">
+          <span class="legend-name" style="color:var(--z-a2)">A2 — <span x-text="state.lang === 'IT' ? 'Aerobico Fondo' : 'Aerobic Base'"></span></span>
+          <span class="legend-desc" x-text="state.lang === 'IT' ? 'Sviluppo della capacità aerobica generale.' : 'General aerobic capacity development.'"></span>
+          <span class="legend-stress">Stress ×1 · coef 1.18</span>
+        </div>
+        <div class="legend-item" style="border-left-color:var(--z-b1)">
+          <span class="legend-name" style="color:var(--z-b1)">B1 — <span x-text="state.lang === 'IT' ? 'Soglia Aerobica' : 'Aerobic Threshold'"></span></span>
+          <span class="legend-desc" x-text="state.lang === 'IT' ? 'Produzione e smaltimento lattato.' : 'Lactate production and clearance.'"></span>
+          <span class="legend-stress">Stress ×3 · coef 1.10</span>
+        </div>
+        <div class="legend-item" style="border-left-color:var(--z-b2)">
+          <span class="legend-name" style="color:var(--z-b2)">B2 — VO₂max Peak</span>
+          <span class="legend-desc" x-text="state.lang === 'IT' ? 'Massimo consumo d\'ossigeno, stimolo centrale intenso.' : 'Maximum oxygen uptake, intense central stimulus.'"></span>
+          <span class="legend-stress">Stress ×5 · coef 1.04</span>
+        </div>
+        <div class="legend-item" style="border-left-color:var(--z-c1)">
+          <span class="legend-name" style="color:var(--z-c1)">C1 — <span x-text="state.lang === 'IT' ? 'Ritmo Gara' : 'Race Pace'"></span></span>
+          <span class="legend-desc" x-text="state.lang === 'IT' ? 'Tolleranza lattacida specifica sul passo gara.' : 'Specific lactate tolerance at race pace.'"></span>
+          <span class="legend-stress">Stress ×8 · coef 1.00</span>
+        </div>
+        <div class="legend-item" style="border-left-color:var(--z-c2)">
+          <span class="legend-name" style="color:var(--z-c2)">C2 — <span x-text="state.lang === 'IT' ? 'Sprint — Picco di Potenza Alattacido' : 'Sprint — Alactic Power Peak'"></span></span>
+          <span class="legend-desc" x-text="state.lang === 'IT' ? 'Velocità massimale, sistema alattacido, picchi di potenza neuromuscolare.' : 'Maximum velocity, alactic system, neuromuscular power peaks.'"></span>
+          <span class="legend-stress">Stress ×12 · coef 0.98</span>
+        </div>
+      </div>
+
+      <button @click="ui.legendOpen = false" class="btn btn-secondary btn-full" x-text="state.lang === 'IT' ? 'Chiudi' : 'Close'"></button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── AQUACORE.AI Auth Guard + Pro Status ──
+window.__acoreIsPro = false; // default sicuro
+(async function() {
+  const SB_URL = 'https://vqfzywjiyzpwhzqwixex.supabase.co';
+  const SB_KEY = 'sb_publishable_GnNyFpSAurKKp6sOl9xc6w_zXCHGa9m';
+  const LOGIN_URL = 'https://getaquacore.com/login';
+  try {
+    const sb = window.supabase.createClient(SB_URL, SB_KEY);
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) {
+      localStorage.setItem('acore_pending_app', 'coach');
+      window.location.replace(LOGIN_URL);
+      return;
+    }
+    // Legge il profilo per sapere se è Pro
+    const { data: profile } = await sb
+      .from('profiles')
+      .select('is_pro, pro_apps, pro_expires_at')
+      .eq('id', session.user.id)
+      .single();
+    if (profile) {
+      const notExpired = !profile.pro_expires_at || new Date(profile.pro_expires_at) > new Date();
+      window.__acoreIsPro = profile.is_pro && notExpired;
+    }
+  } catch(e) {
+    console.warn('[ACore Coach] Auth guard skipped (offline?):', e);
+  }
+})();
+
+// Imposta data nei print elements
+document.addEventListener('DOMContentLoaded', () => {
+  const now = new Date().toLocaleDateString('it-IT', { day:'2-digit', month:'2-digit', year:'numeric' });
+  const d1 = document.getElementById('printDate');
+  const d2 = document.getElementById('printFooterDate');
+  if (d1) d1.textContent = now;
+  if (d2) d2.textContent = now;
+});
+
+function aquaCoreApp() {
+  return {
+    db: null,
+    athletes: [],
+    computedBlocks: [],
+    sessionMetrics: { volume: 0, stressPoints: 0 },
+
+    state: {
+      lang: 'IT',
+      poolLen: '25m',
+      deltaSec: 1.5,
+      workoutRaw: '',
+      isPro: false
+    },
+
+    forms: {
+      athlete: { name: '', lane: '', style: 'SL', min: '', sec: '', cs: '' },
+      edit: { id: null, name: '', lane: '' }
+    },
+
+    ui: { modalOpen: false, legendOpen: false, mobileTab: 'input' },
+
+    constants: {
+      ZONES: {
+        A2: { coef: 1.18, color: 'var(--z-a2)', stressFactor: 1 },
+        B1: { coef: 1.10, color: 'var(--z-b1)', stressFactor: 3 },
+        B2: { coef: 1.04, color: 'var(--z-b2)', stressFactor: 5 },
+        C1: { coef: 1.00, color: 'var(--z-c1)', stressFactor: 8 },
+        C2: { coef: 0.98, color: 'var(--z-c2)', stressFactor: 12 }
+      },
+      PENALTY: {
+        '25m':  { SL:0,    DO:0,    RA:0,    FA:0,    MI:0 },
+        '50m':  { SL:180,  DO:200,  FA:190,  RA:300,  MI:230 },
+        '25yd': { SL:-1100,DO:-1200,FA:-1150,RA:-1400,MI:-1200 }
+      },
+      DECAY: { 25:0.235, 50:0.475, 100:1.0, 150:1.56, 200:2.08, 400:4.35, 800:9.2, 1500:18.0 },
+      RECOVERY: { A2:900, B1:1500, B2:2800, C1:4500, C2:12000 }
+    },
+
+    async initDB() {
+      this.db = new Dexie('AquaCoreDatabase');
+      this.db.version(1).stores({ athletes: 'id, name, lane', config: 'key' });
+      await this.db.open();
+      await this.loadState();
+      await this.loadAthletes();
+      // Legge isPro da Supabase (guard asincrono — attende max 3s)
+      await new Promise(resolve => {
+        const start = Date.now();
+        const check = () => {
+          if (window.__acoreIsPro !== undefined || Date.now() - start > 3000) {
+            this.state.isPro = window.__acoreIsPro === true;
+            resolve();
+          } else {
+            setTimeout(check, 50);
+          }
+        };
+        check();
+      });
+    },
+
+    async loadState() {
+      const saved = await this.db.config.get('app_state');
+      if (saved) this.state = { ...this.state, ...saved.value };
+    },
+
+    async saveState() {
+      await this.db.config.put({ key: 'app_state', value: Alpine.raw(this.state) });
+    },
+
+    async loadAthletes() {
+      this.athletes = await this.db.athletes.toArray();
+      this.athletes.sort((a, b) => a.lane - b.lane);
+    },
+
+    async setPool(len) {
+      this.state.poolLen = len;
+      await this.saveState();
+      if (this.computedBlocks.length > 0) this.calculatePaces();
+    },
+
+    async addAthlete() {
+      if (!this.state.isPro && this.athletes.length >= 3) return;
+      const f = this.forms.athlete;
+      const cs = (parseInt(f.min)||0)*6000 + (parseInt(f.sec)||0)*100 + (parseInt(f.cs)||0);
+      if (cs <= 0 || !f.lane) return;
+
+      const name = f.name.trim().toUpperCase();
+      const pb = { cs, date: new Date().toISOString().slice(0,10) };
+
+      let existing = await this.db.athletes.where('name').equals(name).first();
+      if (existing) {
+        existing.lane = parseInt(f.lane);
+        if (!existing.pbs[f.style]) existing.pbs[f.style] = [];
+        existing.pbs[f.style].push(pb);
+        await this.db.athletes.put(existing);
+      } else {
+        await this.db.athletes.add({
+          id: '_' + Math.random().toString(36).substr(2, 9),
+          name,
+          lane: parseInt(f.lane),
+          pbs: { [f.style]: [pb] }
+        });
+      }
+
+      this.forms.athlete.name = '';
+      this.forms.athlete.min = '';
+      this.forms.athlete.sec = '';
+      this.forms.athlete.cs = '';
+      await this.loadAthletes();
+      if (this.computedBlocks.length > 0) this.calculatePaces();
+    },
+
+    openEditModal(ath) {
+      this.forms.edit.id = ath.id;
+      this.forms.edit.name = ath.name;
+      this.forms.edit.lane = ath.lane;
+      this.ui.modalOpen = true;
+    },
+
+    async saveAthleteGlobal() {
+      const ath = await this.db.athletes.get(this.forms.edit.id);
+      if (ath) {
+        ath.lane = parseInt(this.forms.edit.lane);
+        await this.db.athletes.put(ath);
+        await this.loadAthletes();
+        if (this.computedBlocks.length > 0) this.calculatePaces();
+      }
+      this.ui.modalOpen = false;
+    },
+
+    async deleteAthlete() {
+      if (this.forms.edit.id) {
+        await this.db.athletes.delete(this.forms.edit.id);
+        await this.loadAthletes();
+        if (this.computedBlocks.length > 0) this.calculatePaces();
+      }
+      this.ui.modalOpen = false;
+    },
+
+    resolveDecay(dist) {
+      const dec = this.constants.DECAY;
+      if (dec[dist]) return dec[dist];
+      const keys = Object.keys(dec).map(Number).sort((a,b)=>a-b);
+      if (dist < keys[0]) return dec[keys[0]];
+      if (dist > keys[keys.length-1]) return dec[keys[keys.length-1]];
+      for (let i = 0; i < keys.length-1; i++) {
+        if (dist >= keys[i] && dist <= keys[i+1]) {
+          const t = (dist - keys[i]) / (keys[i+1] - keys[i]);
+          return dec[keys[i]] + t * (dec[keys[i+1]] - dec[keys[i]]);
+        }
+      }
+      return 1.0;
+    },
+
+    calculatePaces() {
+      this.saveState();
+      const tokens = this.state.workoutRaw.split(/[\n,;+\t]+/);
+      const pattern = /^(\d+)\s*[x*×]\s*(\d+)\s*(SL|DO|RA|FA|MI)$/i;
+      const blocks = [];
+
+      tokens.map(t => t.trim()).forEach(tok => {
+        const m = tok.match(pattern);
+        if (m) blocks.push({ reps: parseInt(m[1]), dist: parseInt(m[2]), style: m[3].toUpperCase() });
+      });
+
+      if (!blocks.length || !this.athletes.length) {
+        this.computedBlocks = [];
+        return;
+      }
+
+      let totalVolume = 0;
+      let totalStress = 0;
+
+      this.computedBlocks = blocks.map(block => {
+        totalVolume += block.reps * block.dist;
+        let blockStressSum = 0;
+
+        const results = this.athletes.map(ath => {
+          const history = ath.pbs[block.style] || [];
+          const pbCs = history.length ? history[history.length-1].cs : 6000;
+          const baseCs = pbCs + (this.constants.PENALTY[this.state.poolLen][block.style]||0) + (this.state.deltaSec * 100);
+          const decay = this.resolveDecay(block.dist);
+
+          const zones = Object.entries(this.constants.ZONES).map(([zKey, zCfg]) => {
+            const pace100 = Math.round(baseCs * zCfg.coef);
+            const paceCs = Math.round(pace100 * decay);
+            const recCs = block.dist < 100
+              ? this.constants.RECOVERY[zKey]
+              : Math.round(this.constants.RECOVERY[zKey] * Math.sqrt(block.dist/100));
+            blockStressSum += Math.round((block.dist/100) * block.reps * zCfg.stressFactor);
+            return {
+              key: zKey,
+              color: zCfg.color,
+              pace: this.formatCs(paceCs),
+              int: this.formatInterval(paceCs + recCs)
+            };
+          });
+
+          return { name: ath.name, lane: ath.lane, zones };
+        });
+
+        const blockStress = Math.round(blockStressSum / this.athletes.length);
+        totalStress += blockStress;
+
+        return {
+          reps: block.reps,
+          dist: block.dist,
+          style: block.style,
+          blockStress,
+          results: results.sort((a,b) => a.lane - b.lane)
+        };
+      });
+
+      this.sessionMetrics.volume = totalVolume;
+      this.sessionMetrics.stressPoints = totalStress;
+    },
+
+    formatCs(cs) {
+      cs = Math.max(0, Math.round(cs));
+      const m = Math.floor(cs / 6000);
+      const s = Math.floor((cs % 6000) / 100);
+      const c = cs % 100;
+      return m > 0
+        ? `${m}:${String(s).padStart(2,'0')}.${String(c).padStart(2,'0')}`
+        : `${String(s).padStart(2,'0')}.${String(c).padStart(2,'0')}`;
+    },
+
+    formatInterval(cs) {
+      let secs = Math.ceil(cs / 500) * 5;
+      const m = Math.floor(secs / 60);
+      const s = secs % 60;
+      return m > 0 ? `${m}'${String(s).padStart(2,'0')}"` : `${s}"`;
+    },
+
+    async wipeGlobalState() {
+      const msg = this.state.lang === 'IT'
+        ? "Azzerare l'intero database locale atleti?"
+        : "Wipe all local athlete data?";
+      if (confirm(msg)) {
+        await this.db.delete();
+        window.location.reload();
+      }
+    }
+  };
+}
+</script>
+</body>
+</html>
