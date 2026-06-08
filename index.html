@@ -1083,7 +1083,7 @@ async function loginWithGoogle() {
     localStorage.setItem('acore_pending_app', 'coach');
     await window.__sb.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.href }
+      options: { redirectTo: 'https://coach.getaquacore.com' }
     });
   } catch(e) {
     errEl.textContent = 'Errore durante il login. Riprova.';
