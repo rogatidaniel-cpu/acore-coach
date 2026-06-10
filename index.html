@@ -318,6 +318,7 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
   justify-content: space-between;
   gap: 12px;
 }
+.paywall-icon { font-size: 2rem; flex-shrink: 0; line-height: 1; }
 .paywall-text { font-size: 0.78rem; color: var(--ink-secondary); line-height: 1.4; }
 .paywall-text strong {
   color: var(--app-color);
@@ -701,8 +702,9 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
           <!-- PAYWALL: max 3 atleti free -->
           <template x-if="athletes.length >= 3 && !state.isPro">
             <div class="paywall-banner">
+              <div class="paywall-icon">🔒</div>
               <div class="paywall-text">
-                <strong>🔒 <span x-text="state.lang === 'IT' ? 'Piano Free — Limite raggiunto' : 'Free Plan — Limit reached'"></span></strong>
+                <strong><span x-text="state.lang === 'IT' ? 'Piano Free — Limite raggiunto' : 'Free Plan — Limit reached'"></span></strong>
                 <span x-text="state.lang === 'IT' ? 'Passa a Pro per gestire più di 3 atleti, storico illimitato e export PDF.' : 'Upgrade to Pro for unlimited athletes, full history and PDF export.'"></span>
               </div>
               <button class="btn btn-acid btn-sm" style="flex-shrink:0;" x-text="state.lang === 'IT' ? 'Pro 9€/m' : 'Go Pro 9€/m'"></button>
