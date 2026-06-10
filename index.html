@@ -1172,15 +1172,12 @@ function aquaCoreApp() {
       await new Promise(resolve => {
         const start = Date.now();
         const check = () => {
-          if (window.__acoreIsPro !== undefined || Date.now() - start > 3000) {
-            this.state.isPro = window.__acoreIsPro === true;
-            resolve();
-          } else {
-            setTimeout(check, 50);
-          }
+          if (window.__acoreIsPro !== undefined || Date.now() - start > 3000) resolve();
+          else setTimeout(check, 50);
         };
         check();
       });
+      this.state.isPro = window.__acoreIsPro === true;
     },
 
     async loadState() {
