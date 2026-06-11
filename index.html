@@ -1209,7 +1209,8 @@ function aquaCoreApp() {
       if (cs <= 0 || !f.lane) return;
 
       const name = f.name.trim().toUpperCase();
-      const pb = { cs, date: new Date().toISOString().slice(0,10) };
+      const pbDist = parseInt(f.dist) || 100;
+      const pb = { cs, date: new Date().toISOString().slice(0,10), dist: pbDist };
 
       let existing = await this.db.athletes.where('name').equals(name).first();
       if (existing) {
@@ -1302,7 +1303,15 @@ function aquaCoreApp() {
         const results = this.athletes.map(ath => {
           const history = ath.pbs[block.style] || [];
           const pbCs = history.length ? history[history.length-1].cs : 6000;
-          const baseCs = pbCs + (this.constants.PENALTY[this.state.poolLen][block.style]||0) + (this.state.deltaSec * 100);
+
+          // FIX: normalizza PB a 100m prima di applicare coef e decay
+          const pbDistKey = history.length && history[history.length-1].dist
+            ? history[history.length-1].dist : 100;
+          const decayPb = this.resolveDecay(pbDistKey);
+          const base100 = pbCs / decayPb;
+          const baseCs = base100
+            + (this.constants.PENALTY[this.state.poolLen][block.style] || 0)
+            + (this.state.deltaSec * 100);
           const decay = this.resolveDecay(block.dist);
 
           const zones = Object.entries(this.constants.ZONES).map(([zKey, zCfg]) => {
