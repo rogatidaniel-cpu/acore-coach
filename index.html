@@ -205,7 +205,7 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
 .btn-full { width: 100%; }
 .btn-sm { padding: 6px 10px; font-size: 0.72rem; }
 
-.btn-icon {
+.icon-btn {
   background: var(--bg-raised);
   border: var(--border);
   width: 34px;
@@ -217,7 +217,7 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
   color: var(--ink-secondary);
   font-size: 0.9rem;
 }
-.btn-icon:hover {
+.icon-btn:hover {
   border-color: var(--app-color-dim);
   color: var(--app-color);
 }
@@ -694,7 +694,7 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
         <button class="toggle-btn" :class="state.lang === 'IT' ? 'active' : ''" @click="state.lang = 'IT'">IT</button>
         <button class="toggle-btn" :class="state.lang === 'EN' ? 'active' : ''" @click="state.lang = 'EN'">EN</button>
       </div>
-      <button @click="ui.legendOpen = true" class="btn-icon" :title="state.lang === 'IT' ? 'Legenda zone' : 'Zone legend'">?</button>
+      <button @click="ui.legendOpen = true" class="icon-btn" :title="state.lang === 'IT' ? 'Legenda zone' : 'Zone legend'">?</button>
     </div>
   </header>
 
