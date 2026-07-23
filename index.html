@@ -89,20 +89,20 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
 
 /* ── HEADER ── */
 .header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 200;
   padding: 12px 0;
   border-bottom: var(--border);
   margin-bottom: 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   flex-wrap: wrap;
   gap: 14px;
-  position: sticky;
-  top: 0;
   background: rgba(4,6,10,0.95);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  z-index: 200;
 }
 
 .logo {
@@ -113,7 +113,7 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
 }
 .logo-mark { width: 32px; height: 32px; flex-shrink: 0; }
 .logo-text {
-  font-family: var(--font-ui);
+  font-family: var(--font-ui, inherit);
   font-size: 1.05rem;
   font-weight: 800;
   letter-spacing: -0.02em;
@@ -154,7 +154,7 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
   flex: 1;
   padding: 6px 14px;
   border-radius: 6px;
-  font-family: var(--font-data);
+  font-family: var(--font-data, inherit);
   font-size: 0.7rem;
   font-weight: 500;
   letter-spacing: 0.04em;
@@ -668,7 +668,7 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
 
   <!-- HEADER -->
   <header class="header">
-    <a href="#" class="logo">
+    <div class="logo" style="cursor:default;">
       <svg class="logo-mark" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M5 25H75L95 50L75 75H5L25 50L5 25Z" fill="var(--app-color)"/>
         <path d="M25 37H70L80 50L70 63H25L35 50L25 37Z" fill="#04060a"/>
@@ -682,7 +682,7 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
           <a href="https://getaquacore.com/terms.html">Terms</a>
         </div>
       </div>
-    </a>
+    </div>
 
     <div class="header-actions no-print">
       <div class="toggle-group">
@@ -1047,6 +1047,34 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
       <svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
       Sign in with Google
     </button>
+
+    <div style="width:100%;display:flex;align-items:center;gap:10px;margin:2px 0;">
+      <div style="flex:1;height:1px;background:rgba(255,255,255,0.08);"></div>
+      <span style="color:#3d5470;font-size:0.72rem;" id="authDividerText">oppure</span>
+      <div style="flex:1;height:1px;background:rgba(255,255,255,0.08);"></div>
+    </div>
+
+    <div id="emailFormWrap" style="width:100%;display:none;flex-direction:column;gap:10px;">
+      <input type="email" id="authEmailInput" placeholder="you@example.com" autocomplete="email"
+        style="width:100%;padding:11px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:#f0f6ff;font-size:0.88rem;box-sizing:border-box;">
+      <input type="password" id="authPassInput" placeholder="••••••••" autocomplete="current-password"
+        style="width:100%;padding:11px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:#f0f6ff;font-size:0.88rem;box-sizing:border-box;">
+      <button id="authEmailBtn" onclick="submitEmailAuth()" style="width:100%;padding:12px 20px;background:rgba(200,255,0,0.12);border:1px solid rgba(200,255,0,0.35);border-radius:10px;color:#f0f6ff;font-size:0.9rem;font-weight:700;cursor:pointer;">
+        <span id="authEmailBtnLabel">Accedi</span>
+      </button>
+      <div style="text-align:center;font-size:0.78rem;color:#7a9ab8;">
+        <span id="authModeQuestion">Non hai un account?</span>
+        <a href="#" onclick="toggleAuthMode();return false;" style="color:#c8ff00;text-decoration:none;font-weight:600;" id="authModeLink">Registrati</a>
+      </div>
+    </div>
+
+    <div id="emailToggleShow" onclick="toggleEmailForm(true)" style="cursor:pointer;color:#7a9ab8;font-size:0.8rem;text-decoration:underline;">
+      Accedi con email / password
+    </div>
+    <div id="emailToggleHide" onclick="toggleEmailForm(false)" style="display:none;cursor:pointer;color:#7a9ab8;font-size:0.8rem;text-decoration:underline;">
+      ← Usa Google
+    </div>
+
     <div id="loginError" style="display:none;color:#c8ff00;font-size:0.8rem;text-align:center;"></div>
     <div style="color:#3d5470;font-size:0.72rem;text-align:center;line-height:1.5;">
       Accedendo accetti i Termini di servizio<br>e la Privacy Policy di AQUACORE.AI
@@ -1106,6 +1134,76 @@ async function loginWithGoogle() {
     errEl.textContent = 'Errore durante il login. Riprova.';
     errEl.style.display = 'block';
     btn.disabled = false; btn.textContent = 'Sign in with Google';
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// EMAIL / PASSWORD AUTH FALLBACK
+// ══════════════════════════════════════════════════════
+let __authMode = 'signin'; // 'signin' | 'signup'
+
+function toggleEmailForm(show) {
+  document.getElementById('emailFormWrap').style.display = show ? 'flex' : 'none';
+  document.getElementById('emailToggleShow').style.display = show ? 'none' : 'block';
+  document.getElementById('emailToggleHide').style.display = show ? 'block' : 'none';
+}
+
+function toggleAuthMode() {
+  __authMode = __authMode === 'signin' ? 'signup' : 'signin';
+  const isSignup = __authMode === 'signup';
+  document.getElementById('authEmailBtnLabel').textContent = isSignup ? 'Crea account' : 'Accedi';
+  document.getElementById('authModeQuestion').textContent = isSignup ? 'Hai già un account?' : 'Non hai un account?';
+  document.getElementById('authModeLink').textContent = isSignup ? 'Accedi' : 'Registrati';
+}
+
+async function submitEmailAuth() {
+  const email = document.getElementById('authEmailInput').value.trim();
+  const pass = document.getElementById('authPassInput').value;
+  const errEl = document.getElementById('loginError');
+  const btn = document.getElementById('authEmailBtn');
+  const label = document.getElementById('authEmailBtnLabel');
+  errEl.style.display = 'none';
+
+  if (!email || !pass) {
+    errEl.textContent = 'Inserisci email e password.';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (pass.length < 6) {
+    errEl.textContent = 'La password deve avere almeno 6 caratteri.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true;
+  const originalLabel = label.textContent;
+  label.textContent = 'Attendere…';
+
+  try {
+    if (__authMode === 'signup') {
+      const { data, error } = await window.__sb.auth.signUp({ email, password: pass });
+      if (error) throw error;
+      if (data?.session) {
+        // email confirmation disabilitata lato Supabase -> sessione subito attiva
+        return; // onAuthStateChange gestisce il resto
+      } else {
+        errEl.style.color = '#7a9ab8';
+        errEl.textContent = 'Controlla la tua email per confermare la registrazione.';
+        errEl.style.display = 'block';
+      }
+    } else {
+      const { data, error } = await window.__sb.auth.signInWithPassword({ email, password: pass });
+      if (error) throw error;
+    }
+  } catch (e) {
+    errEl.style.color = '#c8ff00'; // colore errore standard di questo file (stesso di loginError inline)
+    errEl.textContent = e.message === 'Invalid login credentials'
+      ? 'Email o password non corretti.'
+      : (e.message || 'Errore. Riprova.');
+    errEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    label.textContent = originalLabel;
   }
 }
 

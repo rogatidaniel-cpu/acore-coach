@@ -1,0 +1,3 @@
+# Credenziali e file sensibili
+pw supabase.txt
+*.txt
