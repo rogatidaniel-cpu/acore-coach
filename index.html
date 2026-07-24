@@ -1100,6 +1100,9 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
 
 // ── AQUACORE.AI Auth Guard integrato ──
 window.__acoreIsPro = false;
+window.__acoreProfileReady = new Promise(resolve => {
+  window.__acoreProfileResolve = resolve;
+});
 window.__sb = null;
 
 const SB_URL = 'https://vqfzywjiyzpwhzqwixex.supabase.co';
@@ -1118,6 +1121,7 @@ async function loadProfile(sb, userId) {
     const notExpired = !profile.pro_expires_at || new Date(profile.pro_expires_at) > new Date();
     window.__acoreIsPro = profile.is_pro && notExpired;
   }
+  window.__acoreProfileResolve?.();
 }
 
 async function loginWithGoogle() {
@@ -1215,10 +1219,12 @@ async function submitEmailAuth() {
     const { data: { session } } = await window.__sb.auth.getSession();
     if (!session) {
       showLoginOverlay();
+      window.__acoreProfileResolve?.();
       window.__sb.auth.onAuthStateChange(async (event, newSession) => {
         if (event === 'SIGNED_IN' && newSession) {
           await loadProfile(window.__sb, newSession.user.id);
           hideLoginOverlay();
+          Alpine.$data(document.body).state.isPro = window.__acoreIsPro === true;
         }
       });
       return;
@@ -1226,6 +1232,7 @@ async function submitEmailAuth() {
     await loadProfile(window.__sb, session.user.id);
   } catch(e) {
     console.warn('[ACore Coach] Auth guard skipped (offline?):', e);
+    window.__acoreProfileResolve?.();
   }
 })();
 
@@ -1284,14 +1291,10 @@ function aquaCoreApp() {
       await this.loadState();
       await this.loadAthletes();
       // Legge isPro da Supabase (guard asincrono — attende max 3s)
-      await new Promise(resolve => {
-        const start = Date.now();
-        const check = () => {
-          if (window.__acoreIsPro !== undefined || Date.now() - start > 3000) resolve();
-          else setTimeout(check, 50);
-        };
-        check();
-      });
+      await Promise.race([
+        window.__acoreProfileReady,
+        new Promise(r => setTimeout(r, 3000))
+      ]);
       this.state.isPro = window.__acoreIsPro === true;
     },
 
