@@ -570,7 +570,30 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
   }
   .bottom-nav button.active { color: var(--app-color); }
   .bottom-nav button .nav-icon { font-size: 1.1rem; line-height: 1; }
+  .toast { bottom: 84px; }
 }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--bg-raised);
+  border: 1px solid var(--app-color-border);
+  color: var(--ink-primary);
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  z-index: 300;
+  opacity: 0;
+  transition: all 0.3s ease;
+  pointer-events: none;
+  max-width: calc(100vw - 40px);
+  text-align: center;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
 /* ── PRINT / EXPORT ── */
 @media print {
@@ -1245,6 +1268,15 @@ document.addEventListener('DOMContentLoaded', () => {
   if (d2) d2.textContent = now;
 });
 
+function toast(msg) {
+  const el = document.getElementById('toast');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
 function aquaCoreApp() {
   return {
     db: null,
@@ -1316,13 +1348,20 @@ function aquaCoreApp() {
       this.state.poolLen = len;
       await this.saveState();
       if (this.computedBlocks.length > 0) this.calculatePaces();
+      toast(this.state.lang === 'IT' ? `🏊 Vasca ${len}m` : `🏊 ${len}m pool`);
     },
 
     async addAthlete() {
-      if (!this.state.isPro && this.athletes.length >= 3) return;
+      if (!this.state.isPro && this.athletes.length >= 3) {
+        toast(this.state.lang === 'IT' ? '🔒 Limite Free: 3 atleti' : '🔒 Free limit: 3 athletes');
+        return;
+      }
       const f = this.forms.athlete;
       const cs = (parseInt(f.min)||0)*6000 + (parseInt(f.sec)||0)*100 + (parseInt(f.cs)||0);
-      if (cs <= 0 || !f.lane) return;
+      if (cs <= 0 || !f.lane) {
+        toast(this.state.lang === 'IT' ? '⚠️ Inserisci tempo PB e corsia' : '⚠️ Enter PB time and lane');
+        return;
+      }
 
       const name = f.name.trim().toUpperCase();
       const pbDist = parseInt(f.dist) || 100;
@@ -1348,6 +1387,9 @@ function aquaCoreApp() {
       this.forms.athlete.sec = '';
       this.forms.athlete.cs = '';
       await this.loadAthletes();
+      toast(existing
+        ? (this.state.lang === 'IT' ? '✅ Atleta aggiornato' : '✅ Athlete updated')
+        : (this.state.lang === 'IT' ? '✅ Atleta aggiunto' : '✅ Athlete added'));
       if (this.computedBlocks.length > 0) this.calculatePaces();
     },
 
@@ -1364,6 +1406,7 @@ function aquaCoreApp() {
         ath.lane = parseInt(this.forms.edit.lane);
         await this.db.athletes.put(ath);
         await this.loadAthletes();
+        toast(this.state.lang === 'IT' ? '✅ Modifiche salvate' : '✅ Changes saved');
         if (this.computedBlocks.length > 0) this.calculatePaces();
       }
       this.ui.modalOpen = false;
@@ -1373,6 +1416,7 @@ function aquaCoreApp() {
       if (this.forms.edit.id) {
         await this.db.athletes.delete(this.forms.edit.id);
         await this.loadAthletes();
+        toast(this.state.lang === 'IT' ? '🗑 Atleta eliminato' : '🗑 Athlete deleted');
         if (this.computedBlocks.length > 0) this.calculatePaces();
       }
       this.ui.modalOpen = false;
@@ -1493,5 +1537,6 @@ function aquaCoreApp() {
   };
 }
 </script>
+<div class="toast" id="toast"></div>
 </body>
 </html>
