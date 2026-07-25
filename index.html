@@ -779,6 +779,14 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
                     <option value="MI">MI</option>
                   </select>
                 </div>
+                <div style="flex-shrink:0;">
+                  <label class="form-label" x-text="state.lang === 'IT' ? 'Dist.' : 'Dist.'"></label>
+                  <select x-model="forms.athlete.dist" style="width:80px;">
+                    <template x-for="d in [25,50,100,150,200,400,800,1500]" :key="d">
+                      <option :value="d" x-text="d + 'm'"></option>
+                    </template>
+                  </select>
+                </div>
                 <div style="flex:1;">
                   <label class="form-label">PB (min : sec . cs)</label>
                   <div class="time-row">
@@ -970,6 +978,38 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
             <option :value="i" x-text="(state.lang === 'IT' ? 'Corsia ' : 'Lane ') + i"></option>
           </template>
         </select>
+      </div>
+      <div style="border-top:var(--border); padding-top:14px; margin-top:4px;">
+        <label class="form-label" x-text="state.lang === 'IT' ? 'Aggiungi personale' : 'Add personal best'"></label>
+        <div style="display:flex; gap:8px; align-items:flex-end; margin-top:6px;">
+          <div style="flex-shrink:0;">
+            <select x-model="forms.edit.style" style="width:68px;">
+              <option value="SL">SL</option>
+              <option value="DO">DO</option>
+              <option value="RA">RA</option>
+              <option value="FA">FA</option>
+              <option value="MI">MI</option>
+            </select>
+          </div>
+          <div style="flex-shrink:0;">
+            <select x-model="forms.edit.dist" style="width:78px;">
+              <template x-for="d in [25,50,100,150,200,400,800,1500]" :key="d">
+                <option :value="d" x-text="d + 'm'"></option>
+              </template>
+            </select>
+          </div>
+          <div style="flex:1;">
+            <div class="time-row">
+              <input type="number" inputmode="numeric" x-model="forms.edit.min" placeholder="m" min="0" class="time-box">
+              <span class="time-sep">:</span>
+              <input type="number" inputmode="numeric" x-model="forms.edit.sec" placeholder="ss" min="0" max="59" class="time-box">
+              <span class="time-sep">.</span>
+              <input type="number" inputmode="numeric" x-model="forms.edit.cs" placeholder="cs" min="0" max="99" class="time-box">
+            </div>
+          </div>
+        </div>
+        <button @click="addPBToAthlete()" class="btn btn-acid btn-full" style="margin-top:10px; font-size:0.78rem;"
+                x-text="state.lang === 'IT' ? '+ AGGIUNGI PB' : '+ ADD PB'"></button>
       </div>
       <div style="display:flex; justify-content:space-between; gap:10px; margin-top:4px;">
         <button @click="deleteAthlete()" class="btn btn-danger" style="flex:1;" x-text="state.lang === 'IT' ? 'Elimina atleta' : 'Delete athlete'"></button>
@@ -1293,8 +1333,8 @@ function aquaCoreApp() {
     },
 
     forms: {
-      athlete: { name: '', lane: '', style: 'SL', min: '', sec: '', cs: '' },
-      edit: { id: null, name: '', lane: '' }
+      athlete: { name: '', lane: '', style: 'SL', dist: '100', min: '', sec: '', cs: '' },
+      edit: { id: null, name: '', lane: '', style: 'SL', dist: '100', min: '', sec: '', cs: '' }
     },
 
     ui: { modalOpen: false, legendOpen: false, mobileTab: 'input' },
@@ -1397,7 +1437,42 @@ function aquaCoreApp() {
       this.forms.edit.id = ath.id;
       this.forms.edit.name = ath.name;
       this.forms.edit.lane = ath.lane;
+      this.forms.edit.style = 'SL';
+      this.forms.edit.dist = '100';
+      this.forms.edit.min = '';
+      this.forms.edit.sec = '';
+      this.forms.edit.cs = '';
       this.ui.modalOpen = true;
+    },
+
+    async addPBToAthlete() {
+      const f = this.forms.edit;
+      const cs = (parseInt(f.min)||0)*6000 + (parseInt(f.sec)||0)*100 + (parseInt(f.cs)||0);
+      if (cs <= 0) {
+        toast(this.state.lang === 'IT' ? '⚠️ Inserisci un tempo valido' : '⚠️ Enter a valid time');
+        return;
+      }
+      const ath = await this.db.athletes.get(f.id);
+      if (!ath) {
+        toast(this.state.lang === 'IT' ? '⚠️ Atleta non trovato' : '⚠️ Athlete not found');
+        return;
+      }
+      if (!ath.pbs) ath.pbs = {};
+      if (!ath.pbs[f.style]) ath.pbs[f.style] = [];
+      ath.pbs[f.style].push({
+        cs,
+        date: new Date().toISOString().slice(0,10),
+        dist: parseInt(f.dist) || 100
+      });
+      await this.db.athletes.put(ath);
+      await this.loadAthletes();
+      this.forms.edit.min = '';
+      this.forms.edit.sec = '';
+      this.forms.edit.cs = '';
+      toast(this.state.lang === 'IT'
+        ? `✅ PB ${f.dist}m ${f.style} aggiunto`
+        : `✅ ${f.dist}m ${f.style} PB added`);
+      if (this.computedBlocks.length > 0) this.calculatePaces();
     },
 
     async saveAthleteGlobal() {
