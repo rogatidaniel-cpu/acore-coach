@@ -768,7 +768,7 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
                 </div>
               </div>
 
-              <div style="display:flex; gap:8px; align-items:flex-end; margin-bottom:12px;">
+              <div style="display:flex; gap:8px; align-items:flex-end; margin-bottom:12px; flex-wrap:wrap;">
                 <div style="flex-shrink:0;">
                   <label class="form-label">Stile</label>
                   <select x-model="forms.athlete.style" style="width:72px;">
@@ -787,7 +787,7 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
                     </template>
                   </select>
                 </div>
-                <div style="flex:1;">
+                <div style="flex:1; min-width:190px;">
                   <label class="form-label">PB (min : sec . cs)</label>
                   <div class="time-row">
                     <input type="number" inputmode="numeric" x-model="forms.athlete.min" placeholder="m" min="0" class="time-box">
@@ -981,7 +981,7 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
       </div>
       <div style="border-top:var(--border); padding-top:14px; margin-top:4px;">
         <label class="form-label" x-text="state.lang === 'IT' ? 'Aggiungi personale' : 'Add personal best'"></label>
-        <div style="display:flex; gap:8px; align-items:flex-end; margin-top:6px;">
+        <div style="display:flex; gap:8px; align-items:flex-end; margin-top:6px; flex-wrap:wrap;">
           <div style="flex-shrink:0;">
             <select x-model="forms.edit.style" style="width:68px;">
               <option value="SL">SL</option>
@@ -998,7 +998,7 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
               </template>
             </select>
           </div>
-          <div style="flex:1;">
+          <div style="flex:1; min-width:190px;">
             <div class="time-row">
               <input type="number" inputmode="numeric" x-model="forms.edit.min" placeholder="m" min="0" class="time-box">
               <span class="time-sep">:</span>
