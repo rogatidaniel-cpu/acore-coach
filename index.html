@@ -573,6 +573,58 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
   .toast { bottom: 84px; }
 }
 
+/* ── STORICO PB ── */
+.pb-hist { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
+.pb-hist-style {
+  font-family: var(--font-data);
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-top: 6px;
+}
+.pb-hist-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-raised);
+  border: var(--border);
+  border-radius: 8px;
+  padding: 6px 10px;
+}
+.pb-hist-time {
+  font-family: var(--font-data);
+  font-weight: 700;
+  font-size: 0.82rem;
+  color: var(--ink-primary);
+  flex-shrink: 0;
+}
+.pb-hist-meta { font-size: 0.65rem; color: var(--ink-muted); flex: 1; }
+.pb-hist-active {
+  font-family: var(--font-data);
+  font-size: 0.58rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--app-color);
+  border: 1px solid var(--app-color-border);
+  border-radius: 20px;
+  padding: 2px 7px;
+  flex-shrink: 0;
+}
+.pb-hist-del {
+  background: none;
+  border: none;
+  color: var(--ink-muted);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 4px;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+.pb-hist-del:hover { color: var(--z-c1); }
+.pb-hist-empty { font-size: 0.72rem; color: var(--ink-muted); margin-top: 6px; }
+
 /* ── TOAST ── */
 .toast {
   position: fixed;
@@ -816,7 +868,7 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
                   <div class="athlete-name" x-text="ath.name"></div>
                   <div class="athlete-pbs">
                     <template x-for="(history, style) in ath.pbs">
-                      <span style="margin-right:10px;" x-text="style + ' ' + formatCs(history[history.length - 1].cs)"></span>
+                      <span style="margin-right:10px;" x-text="style + ' ' + (history[history.length - 1].dist || 100) + 'm ' + formatCs(history[history.length - 1].cs)"></span>
                     </template>
                   </div>
                 </div>
@@ -978,6 +1030,31 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
             <option :value="i" x-text="(state.lang === 'IT' ? 'Corsia ' : 'Lane ') + i"></option>
           </template>
         </select>
+      </div>
+      <div style="border-top:var(--border); padding-top:14px; margin-top:4px;">
+        <label class="form-label" x-text="state.lang === 'IT' ? 'Personali registrati' : 'Recorded personal bests'"></label>
+        <template x-if="!editingAthlete() || !editingAthlete().pbs || Object.keys(editingAthlete().pbs).length === 0">
+          <div class="pb-hist-empty" x-text="state.lang === 'IT' ? 'Nessun personale registrato.' : 'No personal bests yet.'"></div>
+        </template>
+        <div class="pb-hist">
+          <template x-for="(history, style) in (editingAthlete()?.pbs || {})" :key="style">
+            <div>
+              <div class="pb-hist-style" x-text="style"></div>
+              <div style="display:flex; flex-direction:column; gap:4px; margin-top:4px;">
+                <template x-for="(pb, idx) in history" :key="style + '-' + idx">
+                  <div class="pb-hist-row">
+                    <span class="pb-hist-time" x-text="formatCs(pb.cs)"></span>
+                    <span class="pb-hist-meta" x-text="(pb.dist || 100) + 'm · ' + (pb.date || '')"></span>
+                    <template x-if="idx === history.length - 1">
+                      <span class="pb-hist-active" x-text="state.lang === 'IT' ? 'in uso' : 'in use'"></span>
+                    </template>
+                    <button class="pb-hist-del" @click="deletePB(style, idx)" title="Elimina">×</button>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </template>
+        </div>
       </div>
       <div style="border-top:var(--border); padding-top:14px; margin-top:4px;">
         <label class="form-label" x-text="state.lang === 'IT' ? 'Aggiungi personale' : 'Add personal best'"></label>
@@ -1433,6 +1510,10 @@ function aquaCoreApp() {
       if (this.computedBlocks.length > 0) this.calculatePaces();
     },
 
+    editingAthlete() {
+      return this.athletes.find(a => a.id === this.forms.edit.id) || null;
+    },
+
     openEditModal(ath) {
       this.forms.edit.id = ath.id;
       this.forms.edit.name = ath.name;
@@ -1472,6 +1553,19 @@ function aquaCoreApp() {
       toast(this.state.lang === 'IT'
         ? `✅ PB ${f.dist}m ${f.style} aggiunto`
         : `✅ ${f.dist}m ${f.style} PB added`);
+      if (this.computedBlocks.length > 0) this.calculatePaces();
+    },
+
+    async deletePB(style, idx) {
+      const ath = await this.db.athletes.get(this.forms.edit.id);
+      if (!ath || !ath.pbs || !ath.pbs[style]) return;
+      ath.pbs[style].splice(idx, 1);
+      // Se lo stile resta senza PB va rimossa la chiave:
+      // il roster fa history[history.length-1].cs e su array vuoto crasha.
+      if (ath.pbs[style].length === 0) delete ath.pbs[style];
+      await this.db.athletes.put(ath);
+      await this.loadAthletes();
+      toast(this.state.lang === 'IT' ? '🗑 PB eliminato' : '🗑 PB deleted');
       if (this.computedBlocks.length > 0) this.calculatePaces();
     },
 
