@@ -763,7 +763,7 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
       <div class="toggle-group">
         <button class="toggle-btn" :class="state.poolLen === '25m' ? 'active' : ''" @click="setPool('25m')">25m</button>
         <button class="toggle-btn" :class="state.poolLen === '50m' ? 'active' : ''" @click="setPool('50m')">50m</button>
-        <button class="toggle-btn" :class="state.poolLen === '25yd' ? 'active' : ''" @click="setPool('25yd')">25yd</button>
+        <button class="toggle-btn" disabled style="opacity:0.4;cursor:not-allowed;" title="coming soon">25yd</button>
       </div>
       <div class="toggle-group">
         <button class="toggle-btn" :class="state.lang === 'IT' ? 'active' : ''" @click="state.lang = 'IT'">IT</button>
@@ -823,7 +823,7 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
               <div style="display:flex; gap:8px; align-items:flex-end; margin-bottom:12px; flex-wrap:wrap;">
                 <div style="flex-shrink:0;">
                   <label class="form-label">Stile</label>
-                  <select x-model="forms.athlete.style" style="width:72px;">
+                  <select x-model="forms.athlete.style" @change="snapDist('athlete')" style="width:72px;">
                     <option value="SL">SL</option>
                     <option value="DO">DO</option>
                     <option value="RA">RA</option>
@@ -834,10 +834,19 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
                 <div style="flex-shrink:0;">
                   <label class="form-label" x-text="state.lang === 'IT' ? 'Dist.' : 'Dist.'"></label>
                   <select x-model="forms.athlete.dist" style="width:80px;">
-                    <template x-for="d in [25,50,100,150,200,400,800,1500]" :key="d">
+                    <template x-for="d in pbDists(forms.athlete.style, forms.athlete.pool)" :key="d">
                       <option :value="d" x-text="d + 'm'"></option>
                     </template>
                   </select>
+                </div>
+                <div style="flex-shrink:0;">
+                  <label class="form-label" x-text="state.lang === 'IT' ? 'Vasca PB' : 'PB pool'"></label>
+                  <div class="toggle-group">
+                    <button type="button" class="toggle-btn" :class="forms.athlete.pool === '25m' ? 'active' : ''"
+                            @click="forms.athlete.pool='25m'; snapDist('athlete')">25m</button>
+                    <button type="button" class="toggle-btn" :class="forms.athlete.pool === '50m' ? 'active' : ''"
+                            @click="forms.athlete.pool='50m'; snapDist('athlete')">50m</button>
+                  </div>
                 </div>
                 <div style="flex:1; min-width:190px;">
                   <label class="form-label">PB (min : sec . cs)</label>
@@ -962,6 +971,7 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
                     <div class="zone-athlete-name">
                       <span x-text="ath.name"></span>
                       <span class="badge badge-lane" x-text="'C.' + ath.lane"></span>
+                      <span class="badge badge-lane" x-show="ath.pbFrom" x-text="'PB ' + ath.pbFrom"></span>
                     </div>
                     <template x-for="z in ath.zones" :key="z.key">
                       <div class="zone-row-item">
@@ -1044,10 +1054,7 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
                 <template x-for="(pb, idx) in history" :key="style + '-' + idx">
                   <div class="pb-hist-row">
                     <span class="pb-hist-time" x-text="formatCs(pb.cs)"></span>
-                    <span class="pb-hist-meta" x-text="(pb.dist || 100) + 'm · ' + (pb.date || '')"></span>
-                    <template x-if="idx === history.length - 1">
-                      <span class="pb-hist-active" x-text="state.lang === 'IT' ? 'in uso' : 'in use'"></span>
-                    </template>
+                    <span class="pb-hist-meta" x-text="(pb.dist || 100) + 'm · ' + (pb.pool || '25m') + ' · ' + (pb.date || '')"></span>
                     <button class="pb-hist-del" @click="deletePB(style, idx)" title="Elimina">×</button>
                   </div>
                 </template>
@@ -1060,7 +1067,7 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
         <label class="form-label" x-text="state.lang === 'IT' ? 'Aggiungi personale' : 'Add personal best'"></label>
         <div style="display:flex; gap:8px; align-items:flex-end; margin-top:6px; flex-wrap:wrap;">
           <div style="flex-shrink:0;">
-            <select x-model="forms.edit.style" style="width:68px;">
+            <select x-model="forms.edit.style" @change="snapDist('edit')" style="width:68px;">
               <option value="SL">SL</option>
               <option value="DO">DO</option>
               <option value="RA">RA</option>
@@ -1070,10 +1077,19 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
           </div>
           <div style="flex-shrink:0;">
             <select x-model="forms.edit.dist" style="width:78px;">
-              <template x-for="d in [25,50,100,150,200,400,800,1500]" :key="d">
+              <template x-for="d in pbDists(forms.edit.style, forms.edit.pool)" :key="d">
                 <option :value="d" x-text="d + 'm'"></option>
               </template>
             </select>
+          </div>
+          <div style="flex-shrink:0;">
+            <label class="form-label" x-text="state.lang === 'IT' ? 'Vasca PB' : 'PB pool'"></label>
+            <div class="toggle-group">
+              <button type="button" class="toggle-btn" :class="forms.edit.pool === '25m' ? 'active' : ''"
+                      @click="forms.edit.pool='25m'; snapDist('edit')">25m</button>
+              <button type="button" class="toggle-btn" :class="forms.edit.pool === '50m' ? 'active' : ''"
+                      @click="forms.edit.pool='50m'; snapDist('edit')">50m</button>
+            </div>
           </div>
           <div style="flex:1; min-width:190px;">
             <div class="time-row">
@@ -1410,8 +1426,8 @@ function aquaCoreApp() {
     },
 
     forms: {
-      athlete: { name: '', lane: '', style: 'SL', dist: '100', min: '', sec: '', cs: '' },
-      edit: { id: null, name: '', lane: '', style: 'SL', dist: '100', min: '', sec: '', cs: '' }
+      athlete: { name: '', lane: '', style: 'SL', dist: '100', pool: '25m', min: '', sec: '', cs: '' },
+      edit: { id: null, name: '', lane: '', style: 'SL', dist: '100', pool: '25m', min: '', sec: '', cs: '' }
     },
 
     ui: { modalOpen: false, legendOpen: false, mobileTab: 'input' },
@@ -1430,7 +1446,23 @@ function aquaCoreApp() {
         '25yd': { SL:-1100,DO:-1200,FA:-1150,RA:-1400,MI:-1200 }
       },
       DECAY: { 25:0.235, 50:0.475, 100:1.0, 150:1.56, 200:2.08, 400:4.35, 800:9.2, 1500:18.0 },
-      RECOVERY: { A2:900, B1:1500, B2:2800, C1:4500, C2:12000 }
+      RECOVERY: { A2:900, B1:1500, B2:2800, C1:4500, C2:12000 },
+      PB_DISTS: {
+        '25m': {
+          SL: [25, 50, 100, 200, 400, 800, 1500],
+          DO: [25, 50, 100, 200],
+          RA: [25, 50, 100, 200],
+          FA: [25, 50, 100, 200],
+          MI: [100, 200, 400]
+        },
+        '50m': {
+          SL: [50, 100, 200, 400, 800, 1500],
+          DO: [50, 100, 200],
+          RA: [50, 100, 200],
+          FA: [50, 100, 200],
+          MI: [200, 400]
+        }
+      }
     },
 
     async initDB() {
@@ -1465,7 +1497,7 @@ function aquaCoreApp() {
       this.state.poolLen = len;
       await this.saveState();
       if (this.computedBlocks.length > 0) this.calculatePaces();
-      toast(this.state.lang === 'IT' ? `🏊 Vasca ${len}m` : `🏊 ${len}m pool`);
+      toast(this.state.lang === 'IT' ? `🏊 Vasca ${len}` : `🏊 ${len} pool`);
     },
 
     async addAthlete() {
@@ -1482,7 +1514,7 @@ function aquaCoreApp() {
 
       const name = f.name.trim().toUpperCase();
       const pbDist = parseInt(f.dist) || 100;
-      const pb = { cs, date: new Date().toISOString().slice(0,10), dist: pbDist };
+      const pb = { cs, date: new Date().toISOString().slice(0,10), dist: pbDist, pool: f.pool || '25m' };
 
       let existing = await this.db.athletes.where('name').equals(name).first();
       if (existing) {
@@ -1543,7 +1575,8 @@ function aquaCoreApp() {
       ath.pbs[f.style].push({
         cs,
         date: new Date().toISOString().slice(0,10),
-        dist: parseInt(f.dist) || 100
+        dist: parseInt(f.dist) || 100,
+        pool: f.pool || '25m'
       });
       await this.db.athletes.put(ath);
       await this.loadAthletes();
@@ -1591,6 +1624,46 @@ function aquaCoreApp() {
       this.ui.modalOpen = false;
     },
 
+    pbDists(style, pool) {
+      const table = this.constants.PB_DISTS[pool === '50m' ? '50m' : '25m'];
+      return table[style] || table.SL;
+    },
+
+    snapDist(which) {
+      const f = this.forms[which];
+      const valid = this.pbDists(f.style, f.pool);
+      if (!valid.includes(parseInt(f.dist))) f.dist = String(valid[0]);
+    },
+
+    // Selezione PB: distanza più vicina in scala log,
+    // a parità di distanza il tempo migliore.
+    pickPB(list, style, targetDist) {
+      const cand = (list || []).filter(p => p && p.style === style && p.cs > 0);
+      if (!cand.length) return null;
+      const target = targetDist || 100;
+      let best = null;
+      for (const p of cand) {
+        const d = Math.abs(Math.log((p.dist || 100) / target));
+        const better = !best
+          || d < best.d - 1e-9
+          || (Math.abs(d - best.d) < 1e-9 && p.cs < best.p.cs);
+        if (better) best = { d, p };
+      }
+      return best.p;
+    },
+
+    pickPBCoach(ath, style, targetDist) {
+      const hist = (ath && ath.pbs && ath.pbs[style]) || [];
+      const flat = hist.map(p => ({
+        style,
+        dist: p.dist || 100,
+        cs: p.cs,
+        pool: p.pool || '25m',
+        date: p.date
+      }));
+      return this.pickPB(flat, style, targetDist);
+    },
+
     resolveDecay(dist) {
       const dec = this.constants.DECAY;
       if (dec[dist]) return dec[dist];
@@ -1630,12 +1703,9 @@ function aquaCoreApp() {
         let blockStressSum = 0;
 
         const results = this.athletes.map(ath => {
-          const history = ath.pbs[block.style] || [];
-          const pbCs = history.length ? history[history.length-1].cs : 6000;
-
-          // FIX: normalizza PB a 100m prima di applicare coef e decay
-          const pbDistKey = history.length && history[history.length-1].dist
-            ? history[history.length-1].dist : 100;
+          const sel = this.pickPBCoach(ath, block.style, block.dist);
+          const pbCs = sel ? sel.cs : 6000;
+          const pbDistKey = sel ? (sel.dist || 100) : 100;
           const decayPb = this.resolveDecay(pbDistKey);
           const base100 = pbCs / decayPb;
           const baseCs = base100
@@ -1658,7 +1728,7 @@ function aquaCoreApp() {
             };
           });
 
-          return { name: ath.name, lane: ath.lane, zones };
+          return { name: ath.name, lane: ath.lane, zones, pbFrom: sel ? (sel.dist + 'm') : null };
         });
 
         const blockStress = Math.round(blockStressSum / this.athletes.length);
