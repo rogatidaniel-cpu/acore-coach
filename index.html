@@ -877,7 +877,8 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
                   <div class="athlete-name" x-text="ath.name"></div>
                   <div class="athlete-pbs">
                     <template x-for="(history, style) in ath.pbs">
-                      <span style="margin-right:10px;" x-text="style + ' ' + (history[history.length - 1].dist || 100) + 'm ' + formatCs(history[history.length - 1].cs)"></span>
+                      <span style="margin-right:10px;"
+                            x-text="style + ' ' + rosterPBs(history).map(p => (p.dist || 100) + 'm ' + formatCs(p.cs)).join(' · ')"></span>
                     </template>
                   </div>
                 </div>
@@ -1627,6 +1628,15 @@ function aquaCoreApp() {
     pbDists(style, pool) {
       const table = this.constants.PB_DISTS[pool === '50m' ? '50m' : '25m'];
       return table[style] || table.SL;
+    },
+
+    rosterPBs(history) {
+      const best = {};
+      (history || []).forEach(p => {
+        const d = p.dist || 100;
+        if (!best[d] || p.cs < best[d].cs) best[d] = p;
+      });
+      return Object.values(best).sort((a, b) => (a.dist || 100) - (b.dist || 100));
     },
 
     snapDist(which) {
