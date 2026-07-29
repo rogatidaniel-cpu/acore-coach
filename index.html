@@ -1055,7 +1055,7 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
                 <template x-for="(pb, idx) in history" :key="style + '-' + idx">
                   <div class="pb-hist-row">
                     <span class="pb-hist-time" x-text="formatCs(pb.cs)"></span>
-                    <span class="pb-hist-meta" x-text="(pb.dist || 100) + 'm · ' + (pb.pool || '25m') + ' · ' + (pb.date || '')"></span>
+                    <span class="pb-hist-meta" x-text="(pb.dist || 100) + 'm · ' + (state.lang === 'IT' ? 'vasca ' : 'pool ') + (pb.pool || '25m') + ' · ' + (pb.date || '')"></span>
                     <button class="pb-hist-del" @click="deletePB(style, idx)" title="Elimina">×</button>
                   </div>
                 </template>
