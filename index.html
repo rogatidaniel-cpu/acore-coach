@@ -1692,12 +1692,12 @@ function aquaCoreApp() {
     calculatePaces() {
       this.saveState();
       const tokens = this.state.workoutRaw.split(/[\n,;+\t]+/);
-      const pattern = /^(\d+)\s*[x*×]\s*(\d+)\s*(SL|DO|RA|FA|MI)$/i;
+      const pattern = /^(?:(\d+)\s*[x*×]\s*)?(\d+)\s*(SL|DO|RA|FA|MI)$/i;
       const blocks = [];
 
       tokens.map(t => t.trim()).forEach(tok => {
         const m = tok.match(pattern);
-        if (m) blocks.push({ reps: parseInt(m[1]), dist: parseInt(m[2]), style: m[3].toUpperCase() });
+        if (m) blocks.push({ reps: parseInt(m[1]) || 1, dist: parseInt(m[2]), style: m[3].toUpperCase() });
       });
 
       if (!blocks.length || !this.athletes.length) {
